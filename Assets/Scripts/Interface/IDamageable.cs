@@ -6,6 +6,7 @@ public interface IDamageable
     // `in` passes the struct by readonly reference.
     // That means no copy is made, and ApplyDamage cannot modify the DamageInfo
     void ApplyDamage(in DamageInfo damageInfo);
+    GameObject GetGameObject();
 }
 
 // Struct = a lightweight value type used to group related damage data together.

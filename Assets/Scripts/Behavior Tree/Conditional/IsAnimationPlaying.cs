@@ -22,12 +22,12 @@ public class IsAnimationPlaying : Conditional
     {
         if (animator == null || string.IsNullOrWhiteSpace(AnimationName.Value)) return TaskStatus.Failure;
 
-        var currentState = animator.GetCurrentAnimatorStateInfo(layerIndex);
+        var currentState = animator.GetCurrentAnimatorStateInfo(LayerIndex.Value);
         if (currentState.IsName(AnimationName.Value)) return TaskStatus.Success;
 
-        if (animator.IsInTransition(layerIndex))
+        if (animator.IsInTransition(LayerIndex.Value))
         {
-            var nextState = animator.GetNextAnimatorStateInfo(layerIndex);
+            var nextState = animator.GetNextAnimatorStateInfo(LayerIndex.Value);
             if (nextState.IsName(AnimationName.Value)) return TaskStatus.Success;
         }
 

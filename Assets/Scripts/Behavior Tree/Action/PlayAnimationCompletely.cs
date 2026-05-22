@@ -32,12 +32,14 @@ public class PlayAnimationCompletely : Action
 
     public override TaskStatus OnUpdate()
     {
-        if (animator == null || string.IsNullOrWhiteSpace(animationName.value)) return TaskStatus.Failure;
+        if (animator == null || string.IsNullOrWhiteSpace(animationName.Value)) return TaskStatus.Failure;
 
         if (animator.IsInTransition(0))
         {
             return TaskStatus.Running;
         }
+        
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
         if (!hasEnteredState)
         {
@@ -53,6 +55,6 @@ public class PlayAnimationCompletely : Action
             return TaskStatus.Failure;
         }
 
-        return stateinfo.normalizedTime < 1f ? TaskStatus.Running : TaskStatus.Success;
+        return stateInfo.normalizedTime < 1f ? TaskStatus.Running : TaskStatus.Success;
     }
 }
