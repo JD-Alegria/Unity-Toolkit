@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class VectorMovement : MonoBehaviour
@@ -10,5 +11,21 @@ public class VectorMovement : MonoBehaviour
     {
         
     }
+    
+    IEnumerator LerpSpeed(float startSpeed, float endSpeed,float duration = 2.5f)
+    {
+        float elapsed = 0f;
 
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            movementSpeed = Mathf.Lerp(startSpeed, endSpeed, t);
+            
+            yield return null;
+        }
+        
+        movementSpeed = endSpeed;
+    }
 }

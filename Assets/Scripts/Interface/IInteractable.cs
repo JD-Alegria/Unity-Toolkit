@@ -5,11 +5,17 @@
 public interface IInteractable
 {
     bool CanInteract(IInteractor interactor);
-    void Interact(IInteractor interactor);
+    void Interact(IInteractor interactor, InteractionType interaction);
 }
 
 public interface IInteractor
 {
     GameObject Owner { get; }
     Transform Origin { get; }
+}
+
+public enum InteractionType
+{
+    Primary,
+    Secondary,
 }

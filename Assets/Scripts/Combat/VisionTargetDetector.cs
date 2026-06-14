@@ -37,17 +37,17 @@ public class VisionTargetDetector : MonoBehaviour
         switch (hitscanType)
         {
             case HitscanType.Straight:
-                hit = FireStraightHitscan(range, targetMask, hitscanOrigin, damageable);
+                hit = FireStraightHitscan(damageable);
                 if (hit != null)
                     return true;
                 return false;
             case HitscanType.Spread:
-                hit = FireSpreadHitscan(range, fireSpread, targetMask, hitscanOrigin, damageable);
+                hit = FireSpreadHitscan(damageable);
                 if (hit != null)
                     return true;
                 return false;
             case HitscanType.Spherecast:
-                hit = FireSphereCastHitScan(sphereCastRadius, targetMask, hitscanOrigin, damageable);
+                hit = FireSphereCastHitscan(damageable);
                 if (hit != null)
                     return true;
                 return false;
@@ -56,8 +56,25 @@ public class VisionTargetDetector : MonoBehaviour
         Debug.LogError("HitScanType not set.");
         return false;
     }
+
+    public bool IsObjectInVision(GameObject target)
+    {
+        RaycastHit[] hits = Physics.SphereCastAll(hitscanOrigin.position,
+            sphereCastRadius,
+            hitscanOrigin.forward,
+            range,
+            targetMask);
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider.gameObject == target)
+                return true;
+        }
+
+        return false;
+    }
     
-    RaycastHit? FireStraightHitscan(float range, LayerMask targetMask, Transform hitscanOrigin, IDamageable damageable = null)
+    RaycastHit? FireStraightHitscan(IDamageable damageable = null)
     {
         if (Physics.Raycast(hitscanOrigin.position,
                 hitscanOrigin.forward,
@@ -71,7 +88,7 @@ public class VisionTargetDetector : MonoBehaviour
         return null;
     }
 
-    RaycastHit? FireSpreadHitscan(float range, float fireSpread, LayerMask targetMask, Transform hitscanOrigin, IDamageable damageable = null)
+    RaycastHit? FireSpreadHitscan(IDamageable damageable = null)
     {
         Vector3 finalDirection = hitscanOrigin.forward;
         finalDirection.x += UnityEngine.Random.Range(0, fireSpread);
@@ -79,19 +96,18 @@ public class VisionTargetDetector : MonoBehaviour
         finalDirection.Normalize();
 
         if (Physics.Raycast(hitscanOrigin.position,
-                finalDirection,
-                out RaycastHit hit,
-                range,
-                targetMask))
-        {
+            finalDirection,
+            out RaycastHit hit,
+            range,
+            targetMask))
             return hit;
-        }
+            
 
         return null;
 
     }
     
-    RaycastHit? FireSphereCastHitScan(float sphereCastRadius, LayerMask targetMask, Transform hitscanOrigin, IDamageable damageable = null)
+    RaycastHit? FireSphereCastHitscan(IDamageable damageable = null)
     {
         if (Physics.SphereCast(hitscanOrigin.position,
                 sphereCastRadius,
@@ -102,7 +118,7 @@ public class VisionTargetDetector : MonoBehaviour
         {
             return hit;
         }
-        
+
         return null;
     }
 }
