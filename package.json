@@ -1,0 +1,35 @@
+{
+  "name": "com.jaleg.unity-toolkit",
+  "version": "0.1.0",
+  "displayName": "Unity Toolkit",
+  "description": "Reusable Unity gameplay systems and helper components for indie projects.",
+  "unity": "6000.0",
+  "author": {
+    "name": "Jaleg"
+  },
+  "dependencies": {
+    "com.unity.inputsystem": "1.19.0"
+  },
+  "samples": [
+    {
+      "displayName": "Spawn Manager Template",
+      "description": "A project-level singleton spawn manager template.",
+      "path": "Samples~/Spawn Manager Template"
+    },
+    {
+      "displayName": "UI Manager Template",
+      "description": "A project-level canvas UI manager template.",
+      "path": "Samples~/UI Manager Template"
+    },
+    {
+      "displayName": "Unity Project Template",
+      "description": "Scenes, input actions, gizmos, and render settings from the original toolkit project.",
+      "path": "Samples~/Unity Project Template"
+    },
+    {
+      "displayName": "Space Station Skirmish Data",
+      "description": "Project-specific ScriptableObject examples kept out of runtime.",
+      "path": "Samples~/Space Station Skirmish Data"
+    }
+  ]
+}
