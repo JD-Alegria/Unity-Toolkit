@@ -22,7 +22,21 @@ Do not add selection indicators or selection state to `IInteractable`.
 
 `HitscanShooter` executes hitscan fire and emits `HitscanResult` events for fired, hit, missed, and damage-applied outcomes. Ammo, reloads, input, and weapon visuals should stay in separate project or toolkit components.
 
-`RangeTargetDetector` finds `IDamageable` targets and reports both the selected target and all valid detected targets. It owns detection, not attack decisions.
+`RangeTargetDetector` finds nearby targets by layer and optional filter, then reports both `CurrentTarget` and `AllTargets`. It owns range detection and priority selection, not attack decisions.
+
+Default initialization treats the collider itself as the matched target component:
+
+```csharp
+detector.Init(targetingData);
+RangeTarget target = detector.CurrentTarget;
+```
+
+Combat initialization supplies `DamageableRangeTargetFilter`, which only accepts components implementing `IDamageable` with `CanTakeDamage == true`:
+
+```csharp
+detector.Init(targetingData, DamageableRangeTargetFilter.Instance);
+detector.CurrentTarget.TryGetTarget(out IDamageable damageable);
+```
 
 ## Spawning
 

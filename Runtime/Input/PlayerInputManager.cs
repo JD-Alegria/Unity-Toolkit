@@ -15,7 +15,7 @@ public class ToolboxPlayerInputManager : MonoBehaviour, IInteractor
     [Header("Raycast")]
     [SerializeField] Camera inputCamera;
     [SerializeField] LayerMask interactionLayers = -1;
-    [SerializeField] float raycastDistance = 100f;
+    [SerializeField] float raycastDistance = 10000f;
     [SerializeField] QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
     [SerializeField] bool searchParentsForInteractable = true;
     [SerializeField] bool ignoreUi = true;

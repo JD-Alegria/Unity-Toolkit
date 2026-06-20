@@ -5,7 +5,7 @@ namespace Jaleg.Toolkit;
 
 public class SelectionManager : MonoBehaviour, IInteractor
 {
-    [SerializeField] ToolboxPlayerInputManager inputManager;
+    [SerializeField] PlayerInputManager inputManager;
     [SerializeField] bool clearSelectionWhenPressingAway = true;
 
     ISelectable selected;

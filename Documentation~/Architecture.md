@@ -33,7 +33,7 @@ Keep game-specific managers in game projects: fleet managers, battle event manag
 - Selection: `ISelectable`, `ISelectionView`, `SelectionManager`, `SelectableViewBinder`, and `GameObjectSelectionView`.
 - Dragging: `IDraggable`, `IDropTarget`, `DragInputController`, `TransformDraggable`, and `SnapDropTarget`.
 - Damage: `IDamageable` and `DamageInfo`.
-- Combat: `HitscanShooter`, `HitscanResult`, `RangeTargetDetector`, `DetectorTarget`, `VisionTargetDetector`, and weapon data/state helpers.
+- Combat: `HitscanShooter`, `HitscanResult`, `RangeTargetDetector`, `RangeTarget`, target filters, `VisionTargetDetector`, and weapon data/state helpers.
 - Spawning: `Spawner`, `PrefabSpawner`, `SpawnPointPicker`, `TimedSpawnTicker`, and `ISpawnable`.
 - Common helpers: `AudioDetachClip`, `FaceCamera`, `FeedbackRelay`, `LoopingObjectToggleEffect`, `VectorMovement`, and `WeightedRandom`.
 

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Jaleg.Toolkit;
 
-// scriptableObjects for IDamageableDetectors must implement this interface
+// ScriptableObjects or components that configure range target detectors must implement this interface.
 public interface ITargetDetectorConfig
 {
     float DetectionRange { get; }

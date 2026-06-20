@@ -53,14 +53,36 @@ Use `RangeTargetDetector` to find a target, then a project-specific turret scrip
 
 ```text
 TargetingData implements ITargetDetectorConfig
-RangeTargetDetector.Init(TargetingData)
-TurretController reads DetectorTarget
+RangeTargetDetector.Init(TargetingData, DamageableRangeTargetFilter.Instance)
+TurretController reads CurrentTarget
+TurretController gets IDamageable from CurrentTarget.TargetComponent
 TurretController rotates model
 TurretWeapon calls HitscanShooter.TryFire()
 Target receives IDamageable.ApplyDamage()
 ```
 
-`RangeTargetDetector` should not rotate the turret or decide hostile teams. It only detects.
+`RangeTargetDetector` should not rotate the turret or decide hostile teams. It only detects. The filter decides which collider counts as a valid target for this detector.
+
+Combat target example:
+
+```csharp
+detector.Init(targetingData, DamageableRangeTargetFilter.Instance);
+
+RangeTarget target = detector.CurrentTarget;
+if (target.TryGetTarget(out IDamageable damageable))
+{
+    damageable.ApplyDamage(damageInfo);
+}
+```
+
+Non-combat object target example:
+
+```csharp
+detector.Init(targetingData);
+
+RangeTarget target = detector.CurrentTarget;
+GameObject targetObject = target.GameObject;
+```
 
 ## Strategy Unit Attack
 
@@ -70,7 +92,7 @@ For a Condition I style attack:
 SelectionManager selects unit
 Project command script receives attack button
 RangeTargetDetector finds targets
-AttackController picks DetectorTarget
+AttackController picks CurrentTarget
 Movement script moves toward target
 AttackController applies damage or calls HitscanShooter
 ShipEffect/FeedbackRelay handles visuals
@@ -83,7 +105,8 @@ This keeps toolkit systems reusable and lets the game project own the rules.
 - `IDamageable` keeps damage generic.
 - `DamageInfo` carries context.
 - `HitscanResult` separates weapon execution from feedback.
-- `RangeTargetDetector` reports both primary and all valid targets.
+- `RangeTargetDetector` reports both primary and all valid targets through `RangeTarget`.
+- `DamageableRangeTargetFilter` keeps damage-specific validation outside the general range detector.
 - Config interfaces let project-specific ScriptableObjects drive toolkit components.
 
 ## Combat Weaknesses

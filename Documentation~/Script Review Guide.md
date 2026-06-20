@@ -19,7 +19,7 @@ Important members:
 Works with:
 
 - `HitscanShooter`
-- `RangeTargetDetector`
+- `RangeTargetDetector` through `DamageableRangeTargetFilter`
 - `VisionTargetDetector`
 - project-specific attack controllers
 
@@ -479,7 +479,7 @@ Strengths:
 
 ### `RangeTargetDetector`
 
-Role: finds nearby `IDamageable` targets.
+Role: finds nearby targets by layer and optional filter.
 
 Owns:
 
@@ -497,13 +497,45 @@ Does not own:
 
 Strengths:
 
-- Reports both primary target and all valid targets.
-- Good for turrets, AI, strike groups, and tactical overlays.
+- Reports both `CurrentTarget` and `AllTargets`.
+- Stores the matched `TargetComponent` so consumers can use the interface or component that made the object valid.
+- Good for turrets, AI, strike groups, tactical overlays, and non-combat proximity checks.
 
 Weaknesses:
 
 - Cone detection is not implemented yet.
-- Uses `IDamageable.CanTakeDamage` but not team/faction filtering.
+- Team/faction filtering still belongs in a project-specific filter.
+
+Data flow:
+
+```text
+Physics.OverlapSphere
+IRangeTargetFilter.TryGetTarget(Collider)
+RangeTarget(GameObject, TargetComponent, Distance)
+CurrentTarget / AllTargets
+consumer polls properties or subscribes to events
+```
+
+Default use detects collider objects on the target mask:
+
+```csharp
+detector.Init(targetingData);
+RangeTarget target = detector.CurrentTarget;
+GameObject targetObject = target.GameObject;
+```
+
+Combat use supplies a damageable filter:
+
+```csharp
+detector.Init(targetingData, DamageableRangeTargetFilter.Instance);
+
+if (detector.CurrentTarget.TryGetTarget(out IDamageable damageable))
+{
+    damageable.ApplyDamage(damageInfo);
+}
+```
+
+For another domain, add an `IRangeTargetFilter` that finds and validates the relevant component or interface, then let consumers read it from `RangeTarget.TargetComponent` or `RangeTarget.TryGetTarget`.
 
 ### `VisionTargetDetector`
 

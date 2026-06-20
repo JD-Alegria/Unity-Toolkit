@@ -2,26 +2,34 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Jaleg.Toolkit;
 
-public readonly struct DetectorTarget
+public readonly struct RangeTarget
 {
-    public readonly IDamageable target;
-    public readonly float distance;
+    public readonly GameObject GameObject;
+    public readonly Component TargetComponent;
+    public readonly float Distance;
 
-    public DetectorTarget(IDamageable target, float distance)
+    public RangeTarget(GameObject gameObject, Component targetComponent, float distance)
     {
-        this.target = target;
-        this.distance = distance;
+        GameObject = gameObject;
+        TargetComponent = targetComponent;
+        Distance = distance;
     }
 
-    public bool HasTarget => target != null;
+    public Transform Transform => GameObject != null ? GameObject.transform : null;
+    public bool HasTarget => GameObject != null && TargetComponent != null;
+
+    public bool TryGetTarget<TTarget>(out TTarget target) where TTarget : class
+    {
+        target = TargetComponent as TTarget;
+        return target != null;
+    }
 }
 
 /// <summary>
-/// Detects damageable targets near this object. Game rules decide what to do with the target.
+/// Detects filtered targets near this object. Game rules decide what to do with the target.
 /// </summary>
 public class RangeTargetDetector : MonoBehaviour
 {
@@ -29,7 +37,8 @@ public class RangeTargetDetector : MonoBehaviour
     [SerializeField] Color detectionRadiusColor = Color.red;
 
     ITargetDetectorConfig data;
-    readonly List<DetectorTarget> allDetectorTargets = new();
+    IRangeTargetFilter targetFilter = AnyColliderRangeTargetFilter.Instance;
+    readonly List<RangeTarget> allTargets = new();
 
     bool isDetectingTargets;
     float detectionRadius;
@@ -37,19 +46,25 @@ public class RangeTargetDetector : MonoBehaviour
     LayerMask targetMask;
     DetectionMethod selectedDetectionMethod;
     PriorityType selectedPriorityType;
-    DetectorTarget detectorTarget;
+    RangeTarget currentTarget;
     Coroutine detectionRoutine;
 
-    public event Action<DetectorTarget> TargetChanged;
-    public event Action<IReadOnlyList<DetectorTarget>> TargetsUpdated;
+    public event Action<RangeTarget> TargetChanged;
+    public event Action<IReadOnlyList<RangeTarget>> TargetsUpdated;
 
-    public DetectorTarget DetectorTarget => detectorTarget;
-    public IReadOnlyList<DetectorTarget> AllDetectorTargets => allDetectorTargets;
+    public RangeTarget CurrentTarget => currentTarget;
+    public IReadOnlyList<RangeTarget> AllTargets => allTargets;
     public bool IsDetectingTargets => isDetectingTargets;
 
     public void Init(ITargetDetectorConfig data, float updateInterval = 0.1f)
     {
+        Init(data, AnyColliderRangeTargetFilter.Instance, updateInterval);
+    }
+
+    public void Init(ITargetDetectorConfig data, IRangeTargetFilter targetFilter, float updateInterval = 0.1f)
+    {
         this.data = data;
+        this.targetFilter = targetFilter ?? AnyColliderRangeTargetFilter.Instance;
         detectionRadius = data.DetectionRange;
         targetMask = data.TargetMask;
         selectedDetectionMethod = data.DetectionMethod;
@@ -123,18 +138,18 @@ public class RangeTargetDetector : MonoBehaviour
 
     void UpdateSphereTargets()
     {
-        DetectorTarget previousTarget = detectorTarget;
-        allDetectorTargets.Clear();
-        detectorTarget = default;
+        RangeTarget previousTarget = currentTarget;
+        allTargets.Clear();
+        currentTarget = default;
 
         Collider[] colliders = Physics.OverlapSphere(transform.position, detectionRadius, targetMask);
-        List<IDamageable> targetOptions = new List<IDamageable>(colliders.Length);
+        List<RangeTarget> targetOptions = new List<RangeTarget>(colliders.Length);
 
         foreach (Collider col in colliders)
         {
-            if (col.TryGetComponent(out IDamageable damageable) && IsValidDamageable(damageable))
+            if (TryCreateRangeTarget(col, out RangeTarget target))
             {
-                targetOptions.Add(damageable);
+                targetOptions.Add(target);
             }
         }
 
@@ -150,82 +165,72 @@ public class RangeTargetDetector : MonoBehaviour
                 throw new ArgumentOutOfRangeException();
         }
 
-        TargetsUpdated?.Invoke(allDetectorTargets);
+        TargetsUpdated?.Invoke(allTargets);
 
-        if (previousTarget.target != detectorTarget.target)
+        if (previousTarget.TargetComponent != currentTarget.TargetComponent)
         {
-            TargetChanged?.Invoke(detectorTarget);
+            TargetChanged?.Invoke(currentTarget);
         }
     }
 
-    void DetectClosestTarget(List<IDamageable> targetOptions)
+    void DetectClosestTarget(List<RangeTarget> targetOptions)
     {
         float closestDist = float.MaxValue;
 
-        foreach (IDamageable targetOption in targetOptions)
+        foreach (RangeTarget target in targetOptions)
         {
-            if (!TryCreateDetectorTarget(targetOption, out DetectorTarget target)) continue;
-
             AddUniqueTarget(target);
 
-            if (target.distance < closestDist)
+            if (target.Distance < closestDist)
             {
-                closestDist = target.distance;
-                detectorTarget = target;
+                closestDist = target.Distance;
+                currentTarget = target;
             }
         }
     }
 
-    void DetectFarthestTarget(List<IDamageable> targetOptions)
+    void DetectFarthestTarget(List<RangeTarget> targetOptions)
     {
         float farthestDist = 0f;
 
-        foreach (IDamageable targetOption in targetOptions)
+        foreach (RangeTarget target in targetOptions)
         {
-            if (!TryCreateDetectorTarget(targetOption, out DetectorTarget target)) continue;
-
             AddUniqueTarget(target);
 
-            if (target.distance > farthestDist)
+            if (target.Distance > farthestDist)
             {
-                farthestDist = target.distance;
-                detectorTarget = target;
+                farthestDist = target.Distance;
+                currentTarget = target;
             }
         }
     }
 
-    bool TryCreateDetectorTarget(IDamageable damageable, out DetectorTarget target)
+    bool TryCreateRangeTarget(Collider col, out RangeTarget target)
     {
         target = default;
 
-        GameObject targetObject = damageable.GetGameObject();
-        if (targetObject == null) return false;
+        if (!targetFilter.TryGetTarget(col, out GameObject targetObject, out Component targetComponent)) return false;
+        if (targetObject == null || targetComponent == null) return false;
 
         float distance = Vector3.Distance(targetObject.transform.position, transform.position);
-        target = new DetectorTarget(damageable, distance);
+        target = new RangeTarget(targetObject, targetComponent, distance);
         return true;
     }
 
-    void AddUniqueTarget(DetectorTarget target)
+    void AddUniqueTarget(RangeTarget target)
     {
-        foreach (DetectorTarget existingTarget in allDetectorTargets)
+        foreach (RangeTarget existingTarget in allTargets)
         {
-            if (existingTarget.target == target.target) return;
+            if (existingTarget.TargetComponent == target.TargetComponent) return;
         }
 
-        allDetectorTargets.Add(target);
+        allTargets.Add(target);
     }
 
     void ResetDetectionValues()
     {
         isDetectingTargets = false;
-        detectorTarget = default;
-        allDetectorTargets.Clear();
-    }
-
-    static bool IsValidDamageable(IDamageable damageable)
-    {
-        if (damageable is not Object unityObject || unityObject == null) return false;
-        return damageable.CanTakeDamage;
+        currentTarget = default;
+        allTargets.Clear();
     }
 }
